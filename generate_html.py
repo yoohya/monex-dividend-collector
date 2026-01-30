@@ -1,7 +1,6 @@
 """CSVデータからHTMLページを生成するスクリプト."""
 
 import csv
-from collections import defaultdict
 from pathlib import Path
 
 OUTPUT_DIR = Path(__file__).parent / "output"
@@ -81,15 +80,44 @@ HTML_TEMPLATE = """\
   td:nth-child(1), td:nth-child(2), td:nth-child(3) {{
     text-align: left;
   }}
-  tr:nth-child(even) {{
-    background: #f9f9f9;
+  tr.yield-4 {{
+    background: #f8d7da;
+  }}
+  tr.yield-3 {{
+    background: #ffe0b2;
+  }}
+  tr.yield-2 {{
+    background: #fff3cd;
+  }}
+  tr.yield-1 {{
+    background: #fff9e6;
   }}
   tr:hover {{
-    background: #eef2f7;
+    filter: brightness(0.95);
   }}
   .container {{
     max-width: 1200px;
     margin: 0 auto;
+  }}
+  .legend {{
+    font-size: 0.85rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+  }}
+  .legend span {{
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }}
+  .legend i {{
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 1px solid #ccc;
+    border-radius: 2px;
+    font-style: normal;
   }}
   .note {{
     color: #888;
@@ -102,9 +130,14 @@ HTML_TEMPLATE = """\
 <div class="container">
 <h1>配当利回りデータ</h1>
 <p class="updated">最終更新: {updated}</p>
+<div class="legend">
+  <span><i style="background:#f8d7da"></i> 1Y・2Y両方の最大以上</span>
+  <span><i style="background:#ffe0b2"></i> いずれかの最大以上</span>
+  <span><i style="background:#fff3cd"></i> 1Y・2Y両方の平均以上</span>
+  <span><i style="background:#fff9e6"></i> いずれかの平均以上</span>
+</div>
 
-<h2>最新データ</h2>
-<table id="latest-table" class="sortable">
+<table class="sortable">
 <thead>
 <tr>
   <th>銘柄コード</th>
@@ -121,30 +154,7 @@ HTML_TEMPLATE = """\
 </tr>
 </thead>
 <tbody>
-{latest_rows}
-</tbody>
-</table>
-
-<h2>履歴データ</h2>
-<table id="history-table" class="sortable">
-<thead>
-<tr>
-  <th>日付</th>
-  <th>銘柄コード</th>
-  <th>銘柄名</th>
-  <th>セクター</th>
-  <th>株価</th>
-  <th>予想利回り(%)</th>
-  <th>1Y 最大</th>
-  <th>1Y 最小</th>
-  <th>1Y 平均</th>
-  <th>2Y 最大</th>
-  <th>2Y 最小</th>
-  <th>2Y 平均</th>
-</tr>
-</thead>
-<tbody>
-{history_rows}
+{rows}
 </tbody>
 </table>
 
@@ -215,6 +225,38 @@ def _cell(value: str) -> str:
     return value if value else "-"
 
 
+def _to_float(value: str | None) -> float | None:
+    if not value:
+        return None
+    try:
+        return float(value.replace(",", ""))
+    except ValueError:
+        return None
+
+
+def _row_class(r: dict) -> str:
+    current = _to_float(r.get("dividend_yield_forecast"))
+    if current is None:
+        return ""
+    y1_max = _to_float(r.get("yield_1y_max"))
+    y2_max = _to_float(r.get("yield_2y_max"))
+    y1_avg = _to_float(r.get("yield_1y_avg"))
+    y2_avg = _to_float(r.get("yield_2y_avg"))
+
+    maxes = [v for v in (y1_max, y2_max) if v is not None]
+    avgs = [v for v in (y1_avg, y2_avg) if v is not None]
+
+    if maxes and current >= max(maxes):
+        return ' class="yield-4"'
+    if maxes and current >= min(maxes):
+        return ' class="yield-3"'
+    if avgs and current >= max(avgs):
+        return ' class="yield-2"'
+    if avgs and current >= min(avgs):
+        return ' class="yield-1"'
+    return ""
+
+
 def generate():
     if not CSV_PATH.exists():
         print(f"CSV not found: {CSV_PATH}")
@@ -230,36 +272,12 @@ def generate():
         print("No data in CSV.")
         return
 
-    # 最新日付のデータを抽出
-    latest_date = max(r["date"] for r in rows)
-    latest = [r for r in rows if r["date"] == latest_date]
-    latest_timestamp = latest[0].get("timestamp", latest_date) if latest else latest_date
+    timestamp = rows[-1].get("timestamp", rows[-1]["date"])
 
-    # 最新データテーブル
-    latest_lines = []
-    for r in latest:
-        latest_lines.append(
-            f"<tr>"
-            f"<td>{_cell(r.get('code', ''))}</td>"
-            f"<td>{_cell(r.get('name', ''))}</td>"
-            f"<td>{_cell(r.get('sector', ''))}</td>"
-            f"<td>{_cell(r.get('price', ''))}</td>"
-            f"<td>{_cell(r.get('dividend_yield_forecast', ''))}</td>"
-            f"<td>{_cell(r.get('yield_1y_max', ''))}</td>"
-            f"<td>{_cell(r.get('yield_1y_min', ''))}</td>"
-            f"<td>{_cell(r.get('yield_1y_avg', ''))}</td>"
-            f"<td>{_cell(r.get('yield_2y_max', ''))}</td>"
-            f"<td>{_cell(r.get('yield_2y_min', ''))}</td>"
-            f"<td>{_cell(r.get('yield_2y_avg', ''))}</td>"
-            f"</tr>"
-        )
-
-    # 履歴データテーブル（新しい順）
-    history_lines = []
-    for r in reversed(rows):
-        history_lines.append(
-            f"<tr>"
-            f"<td>{_cell(r.get('date', ''))}</td>"
+    table_lines = []
+    for r in rows:
+        table_lines.append(
+            f"<tr{_row_class(r)}>"
             f"<td>{_cell(r.get('code', ''))}</td>"
             f"<td>{_cell(r.get('name', ''))}</td>"
             f"<td>{_cell(r.get('sector', ''))}</td>"
@@ -275,9 +293,8 @@ def generate():
         )
 
     html = HTML_TEMPLATE.format(
-        updated=latest_timestamp,
-        latest_rows="\n".join(latest_lines),
-        history_rows="\n".join(history_lines),
+        updated=timestamp,
+        rows="\n".join(table_lines),
     )
 
     OUTPUT_DIR.mkdir(exist_ok=True)

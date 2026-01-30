@@ -75,7 +75,7 @@ JS_GET_STOCK_PRICE = """() => {
     if (!summary) return null;
     const ths = summary.querySelectorAll('th');
     for (const th of ths) {
-        if (th.textContent.includes('株価')) {
+        if (th.textContent.includes('現在値')) {
             const td = th.nextElementSibling;
             if (!td) continue;
             const num = td.querySelector('.num');
