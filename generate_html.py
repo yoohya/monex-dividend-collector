@@ -112,10 +112,11 @@ HTML_TEMPLATE = """\
     gap: 12px;
     flex-wrap: wrap;
   }}
-  .legend span {{
+  .legend label {{
     display: inline-flex;
     align-items: center;
     gap: 6px;
+    cursor: pointer;
   }}
   .legend i {{
     display: inline-block;
@@ -147,11 +148,12 @@ HTML_TEMPLATE = """\
 <h1>配当利回りデータ</h1>
 <p class="updated">最終更新: {updated}</p>
 <div class="controls">
-  <div class="legend">
-    <span><i style="background:#f8d7da"></i> 1Y・2Y両方の最大以上</span>
-    <span><i style="background:#ffe0b2"></i> いずれかの最大以上</span>
-    <span><i style="background:#fff3cd"></i> 1Y・2Y両方の平均以上</span>
-    <span><i style="background:#fff9e6"></i> いずれかの平均以上</span>
+  <div class="legend" id="yield-filter">
+    <label><input type="checkbox" checked data-yield="yield-4"><i style="background:#f8d7da"></i> 1Y・2Y両方の最大以上</label>
+    <label><input type="checkbox" checked data-yield="yield-3"><i style="background:#ffe0b2"></i> いずれかの最大以上</label>
+    <label><input type="checkbox" checked data-yield="yield-2"><i style="background:#fff3cd"></i> 1Y・2Y両方の平均以上</label>
+    <label><input type="checkbox" checked data-yield="yield-1"><i style="background:#fff9e6"></i> いずれかの平均以上</label>
+    <label><input type="checkbox" checked data-yield="yield-0"><i style="background:#fff;border:1px solid #ccc"></i> 平均未満</label>
   </div>
   <div class="col-toggles" id="col-toggles"></div>
 </div>
@@ -235,6 +237,19 @@ HTML_TEMPLATE = """\
   }});
 }})();
 
+  // 利回りレベルによる行フィルタ
+  (function() {{
+    var checkboxes = document.querySelectorAll('#yield-filter input[type="checkbox"]');
+    checkboxes.forEach(function(cb) {{
+      cb.addEventListener('change', function() {{
+        var cls = cb.getAttribute('data-yield');
+        var rows = document.querySelectorAll('tbody tr.' + cls);
+        var display = cb.checked ? '' : 'none';
+        rows.forEach(function(row) {{ row.style.display = display; }});
+      }});
+    }});
+  }})();
+
   // 列の表示/非表示トグル
   (function() {{
     var table = document.querySelector('table.sortable');
@@ -296,7 +311,7 @@ def _row_class(r: dict) -> str:
         return ' class="yield-2"'
     if avgs and current >= min(avgs):
         return ' class="yield-1"'
-    return ""
+    return ' class="yield-0"'
 
 
 def generate():
