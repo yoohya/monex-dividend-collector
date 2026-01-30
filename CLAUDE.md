@@ -5,9 +5,10 @@
 ## 構成
 
 - `scraper.py` - スクレイパー本体。Playwright で `scouter.monex.co.jp` のチャートデータを取得
+- `generate_html.py` - CSVデータからHTML生成
 - `stocks.json` - 監視対象銘柄リスト（銘柄コードと名前）
-- `output/dividend_data.csv` - 収集データ（追記型CSV）
-- `.github/workflows/collect.yml` - GitHub Actions定期実行（平日 JST 16:30）
+- `.github/workflows/collect.yml` - GitHub Actions定期実行（平日 JST 16:30）& Pagesデプロイ
+- `output/` はワークフロー内で動的生成（Git管理外）
 
 ## データソース
 

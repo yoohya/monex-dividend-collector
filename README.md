@@ -47,13 +47,11 @@
 ├── generate_html.py                 # HTML生成
 ├── stocks.json                      # 監視対象銘柄リスト
 ├── requirements.txt                 # Python依存パッケージ
-├── output/
-│   ├── dividend_data.csv            # 収集データ（追記型）
-│   └── index.html                   # GitHub Pages用HTML
 └── .github/workflows/
-    ├── collect.yml                  # データ収集ワークフロー
-    └── pages.yml                    # Pages デプロイワークフロー
+    └── collect.yml                  # データ収集 & Pagesデプロイ
 ```
+
+`output/` はワークフロー内で動的に生成され、GitHub Pages の artifact として直接デプロイされます。
 
 ## ローカル実行
 
