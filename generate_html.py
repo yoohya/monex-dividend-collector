@@ -99,11 +99,17 @@ HTML_TEMPLATE = """\
     max-width: 1200px;
     margin: 0 auto;
   }}
-  .legend {{
+  .controls {{
     font-size: 0.85rem;
     margin-bottom: 1.5rem;
     display: flex;
     gap: 16px;
+    flex-wrap: wrap;
+    align-items: center;
+  }}
+  .legend {{
+    display: flex;
+    gap: 12px;
     flex-wrap: wrap;
   }}
   .legend span {{
@@ -119,6 +125,16 @@ HTML_TEMPLATE = """\
     border-radius: 2px;
     font-style: normal;
   }}
+  .col-toggles {{
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    border-left: 1px solid #ccc;
+    padding-left: 16px;
+  }}
+  .col-toggles label {{
+    cursor: pointer;
+  }}
   .note {{
     color: #888;
     font-size: 0.8rem;
@@ -130,11 +146,14 @@ HTML_TEMPLATE = """\
 <div class="container">
 <h1>配当利回りデータ</h1>
 <p class="updated">最終更新: {updated}</p>
-<div class="legend">
-  <span><i style="background:#f8d7da"></i> 1Y・2Y両方の最大以上</span>
-  <span><i style="background:#ffe0b2"></i> いずれかの最大以上</span>
-  <span><i style="background:#fff3cd"></i> 1Y・2Y両方の平均以上</span>
-  <span><i style="background:#fff9e6"></i> いずれかの平均以上</span>
+<div class="controls">
+  <div class="legend">
+    <span><i style="background:#f8d7da"></i> 1Y・2Y両方の最大以上</span>
+    <span><i style="background:#ffe0b2"></i> いずれかの最大以上</span>
+    <span><i style="background:#fff3cd"></i> 1Y・2Y両方の平均以上</span>
+    <span><i style="background:#fff9e6"></i> いずれかの平均以上</span>
+  </div>
+  <div class="col-toggles" id="col-toggles"></div>
 </div>
 
 <table class="sortable">
@@ -145,12 +164,12 @@ HTML_TEMPLATE = """\
   <th>セクター</th>
   <th>株価</th>
   <th>予想利回り(%)</th>
-  <th>1Y 最大</th>
   <th>1Y 最小</th>
   <th>1Y 平均</th>
-  <th>2Y 最大</th>
+  <th>1Y 最大</th>
   <th>2Y 最小</th>
   <th>2Y 平均</th>
+  <th>2Y 最大</th>
 </tr>
 </thead>
 <tbody>
@@ -215,6 +234,29 @@ HTML_TEMPLATE = """\
     }});
   }});
 }})();
+
+  // 列の表示/非表示トグル
+  (function() {{
+    var table = document.querySelector('table.sortable');
+    if (!table) return;
+    var headers = table.querySelectorAll('thead th');
+    var container = document.getElementById('col-toggles');
+    headers.forEach(function(th, colIndex) {{
+      var label = document.createElement('label');
+      var cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.checked = true;
+      cb.addEventListener('change', function() {{
+        var display = cb.checked ? '' : 'none';
+        table.querySelectorAll('tr').forEach(function(row) {{
+          if (row.cells[colIndex]) row.cells[colIndex].style.display = display;
+        }});
+      }});
+      label.appendChild(cb);
+      label.appendChild(document.createTextNode(' ' + th.textContent.trim()));
+      container.appendChild(label);
+    }});
+  }})();
 </script>
 </body>
 </html>
@@ -283,12 +325,12 @@ def generate():
             f"<td>{_cell(r.get('sector', ''))}</td>"
             f"<td>{_cell(r.get('price', ''))}</td>"
             f"<td>{_cell(r.get('dividend_yield_forecast', ''))}</td>"
-            f"<td>{_cell(r.get('yield_1y_max', ''))}</td>"
             f"<td>{_cell(r.get('yield_1y_min', ''))}</td>"
             f"<td>{_cell(r.get('yield_1y_avg', ''))}</td>"
-            f"<td>{_cell(r.get('yield_2y_max', ''))}</td>"
+            f"<td>{_cell(r.get('yield_1y_max', ''))}</td>"
             f"<td>{_cell(r.get('yield_2y_min', ''))}</td>"
             f"<td>{_cell(r.get('yield_2y_avg', ''))}</td>"
+            f"<td>{_cell(r.get('yield_2y_max', ''))}</td>"
             f"</tr>"
         )
 
