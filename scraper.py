@@ -69,6 +69,25 @@ JS_GET_CURRENT_YIELD = """() => {
     return null;
 }"""
 
+JS_GET_STOCK_PRICE = """() => {
+    // サマリーセクションから株価を取得
+    const summary = document.querySelector('.summary');
+    if (!summary) return null;
+    const ths = summary.querySelectorAll('th');
+    for (const th of ths) {
+        if (th.textContent.includes('株価')) {
+            const td = th.nextElementSibling;
+            if (!td) continue;
+            const num = td.querySelector('.num');
+            if (num) {
+                const text = num.textContent.trim();
+                if (text && text !== '－') return text;
+            }
+        }
+    }
+    return null;
+}"""
+
 
 def load_stocks() -> list[dict]:
     with open(STOCKS_FILE, encoding="utf-8") as f:
@@ -86,6 +105,11 @@ async def fetch_dividend_stats(page, code: str) -> dict:
     current_yield = await page.evaluate(JS_GET_CURRENT_YIELD)
     if current_yield:
         data["dividend_yield_forecast"] = current_yield
+
+    # 株価をHTMLサマリーから取得
+    price = await page.evaluate(JS_GET_STOCK_PRICE)
+    if price:
+        data["price"] = price
 
     # 2年データ（デフォルト表示）を取得
     stats_2y = await page.evaluate(JS_EXTRACT_PLOT_LINES, YIELD_CHART_INDEX)
@@ -128,6 +152,8 @@ async def run():
         "timestamp",
         "code",
         "name",
+        "sector",
+        "price",
         "dividend_yield_forecast",
         "yield_1y_max",
         "yield_1y_min",
@@ -146,9 +172,11 @@ async def run():
             code = stock["code"]
             name = stock["name"]
             print(f"Fetching {code} ({name})...")
+            sector = stock.get("sector", "")
             try:
                 data = await fetch_dividend_stats(page, code)
                 data["name"] = name
+                data["sector"] = sector
                 data["date"] = today
                 data["timestamp"] = timestamp
                 results.append(data)
@@ -159,6 +187,7 @@ async def run():
                     "timestamp": timestamp,
                     "code": code,
                     "name": name,
+                    "sector": sector,
                 })
             await asyncio.sleep(1)  # サーバー負荷軽減
 

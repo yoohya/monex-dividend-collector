@@ -1,17 +1,1 @@
-{
-  "permissions": {
-    "allow": [
-      "WebFetch(domain:scouter.monex.co.jp)",
-      "Bash(findstr:*)",
-      "Bash(pip install:*)",
-      "Bash(python -m playwright:*)",
-      "Bash(C:UserstcyyhAppDataLocalPythonbinpython.exe -m pip install playwright)",
-      "Bash(python -m pip install:*)",
-      "Bash(python:*)",
-      "Bash(del \"C:\\\\Users\\\\tcyyh\\\\repos\\\\monex-dividend-collector\\\\output\\\\dividend_data.csv\")",
-      "Bash(git init:*)",
-      "Bash(git -C \"C:\\\\Users\\\\tcyyh\\\\repos\\\\monex-dividend-collector\" status)",
-      "Bash(git -C \"C:\\\\Users\\\\tcyyh\\\\repos\\\\monex-dividend-collector\" add .claude/ .github/ .gitignore CLAUDE.md generate_html.py output/dividend_data.csv output/index.html requirements.txt scraper.py stocks.json)"
-    ]
-  }
-}
+{}

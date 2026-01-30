@@ -13,6 +13,8 @@ FIELDNAMES = [
     "timestamp",
     "code",
     "name",
+    "sector",
+    "price",
     "dividend_yield_forecast",
     "yield_1y_max",
     "yield_1y_min",
@@ -69,8 +71,14 @@ HTML_TEMPLATE = """\
     background: #2c3e50;
     color: #fff;
     font-weight: 600;
+    cursor: pointer;
+    user-select: none;
   }}
-  td:nth-child(1), td:nth-child(2) {{
+  th .sort-arrow {{
+    margin-left: 4px;
+    font-size: 0.7rem;
+  }}
+  td:nth-child(1), td:nth-child(2), td:nth-child(3) {{
     text-align: left;
   }}
   tr:nth-child(even) {{
@@ -80,7 +88,7 @@ HTML_TEMPLATE = """\
     background: #eef2f7;
   }}
   .container {{
-    max-width: 1100px;
+    max-width: 1200px;
     margin: 0 auto;
   }}
   .note {{
@@ -96,11 +104,13 @@ HTML_TEMPLATE = """\
 <p class="updated">最終更新: {updated}</p>
 
 <h2>最新データ</h2>
-<table>
+<table id="latest-table" class="sortable">
 <thead>
 <tr>
   <th>銘柄コード</th>
   <th>銘柄名</th>
+  <th>セクター</th>
+  <th>株価</th>
   <th>予想利回り(%)</th>
   <th>1Y 最大</th>
   <th>1Y 最小</th>
@@ -116,12 +126,14 @@ HTML_TEMPLATE = """\
 </table>
 
 <h2>履歴データ</h2>
-<table>
+<table id="history-table" class="sortable">
 <thead>
 <tr>
   <th>日付</th>
   <th>銘柄コード</th>
   <th>銘柄名</th>
+  <th>セクター</th>
+  <th>株価</th>
   <th>予想利回り(%)</th>
   <th>1Y 最大</th>
   <th>1Y 最小</th>
@@ -138,6 +150,62 @@ HTML_TEMPLATE = """\
 
 <p class="note">データソース: マネックス銘柄スカウターライト</p>
 </div>
+<script>
+(function() {{
+  document.querySelectorAll('table.sortable').forEach(function(table) {{
+    var headers = table.querySelectorAll('thead th');
+    var sortState = {{}};
+    headers.forEach(function(th, colIndex) {{
+      th.addEventListener('click', function() {{
+        var tbody = table.querySelector('tbody');
+        var rows = Array.from(tbody.querySelectorAll('tr'));
+        var ascending = sortState[colIndex] !== 'asc';
+        sortState[colIndex] = ascending ? 'asc' : 'desc';
+        // 他の列のソート状態をリセット
+        Object.keys(sortState).forEach(function(k) {{
+          if (parseInt(k) !== colIndex) delete sortState[k];
+        }});
+        rows.sort(function(a, b) {{
+          var cellA = a.cells[colIndex].textContent.trim();
+          var cellB = b.cells[colIndex].textContent.trim();
+          // "-" を空として扱う
+          if (cellA === '-') cellA = '';
+          if (cellB === '-') cellB = '';
+          // 数値判定（カンマ除去）
+          var numA = parseFloat(cellA.replace(/,/g, ''));
+          var numB = parseFloat(cellB.replace(/,/g, ''));
+          var result;
+          if (!isNaN(numA) && !isNaN(numB)) {{
+            result = numA - numB;
+          }} else if (!isNaN(numA)) {{
+            result = -1;
+          }} else if (!isNaN(numB)) {{
+            result = 1;
+          }} else {{
+            result = cellA.localeCompare(cellB, 'ja');
+          }}
+          return ascending ? result : -result;
+        }});
+        rows.forEach(function(row) {{ tbody.appendChild(row); }});
+        // 矢印を更新
+        headers.forEach(function(h, i) {{
+          var arrow = h.querySelector('.sort-arrow');
+          if (!arrow) {{
+            arrow = document.createElement('span');
+            arrow.className = 'sort-arrow';
+            h.appendChild(arrow);
+          }}
+          if (i === colIndex) {{
+            arrow.textContent = ascending ? ' \\u25B2' : ' \\u25BC';
+          }} else {{
+            arrow.textContent = '';
+          }}
+        }});
+      }});
+    }});
+  }});
+}})();
+</script>
 </body>
 </html>
 """
@@ -174,6 +242,8 @@ def generate():
             f"<tr>"
             f"<td>{_cell(r.get('code', ''))}</td>"
             f"<td>{_cell(r.get('name', ''))}</td>"
+            f"<td>{_cell(r.get('sector', ''))}</td>"
+            f"<td>{_cell(r.get('price', ''))}</td>"
             f"<td>{_cell(r.get('dividend_yield_forecast', ''))}</td>"
             f"<td>{_cell(r.get('yield_1y_max', ''))}</td>"
             f"<td>{_cell(r.get('yield_1y_min', ''))}</td>"
@@ -192,6 +262,8 @@ def generate():
             f"<td>{_cell(r.get('date', ''))}</td>"
             f"<td>{_cell(r.get('code', ''))}</td>"
             f"<td>{_cell(r.get('name', ''))}</td>"
+            f"<td>{_cell(r.get('sector', ''))}</td>"
+            f"<td>{_cell(r.get('price', ''))}</td>"
             f"<td>{_cell(r.get('dividend_yield_forecast', ''))}</td>"
             f"<td>{_cell(r.get('yield_1y_max', ''))}</td>"
             f"<td>{_cell(r.get('yield_1y_min', ''))}</td>"
