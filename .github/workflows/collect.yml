@@ -1,4 +1,4 @@
-name: Collect Dividend Data
+name: Collect and Deploy
 
 on:
   schedule:
@@ -7,7 +7,7 @@ on:
   workflow_dispatch: # 手動実行も可能
 
 jobs:
-  collect:
+  collect-and-deploy:
     runs-on: ubuntu-latest
     permissions:
       pages: write
