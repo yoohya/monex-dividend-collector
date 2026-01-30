@@ -14,6 +14,8 @@ FIELDNAMES = [
     "name",
     "sector",
     "price",
+    "per",
+    "pbr",
     "dividend_yield_forecast",
     "yield_1y_max",
     "yield_1y_min",
@@ -165,6 +167,8 @@ HTML_TEMPLATE = """\
   <th>銘柄名</th>
   <th>セクター</th>
   <th>株価</th>
+  <th>PER</th>
+  <th>PBR</th>
   <th>予想利回り(%)</th>
   <th>1Y 最小</th>
   <th>1Y 平均</th>
@@ -294,7 +298,7 @@ def _to_float(value: str | None) -> float | None:
 def _row_class(r: dict) -> str:
     current = _to_float(r.get("dividend_yield_forecast"))
     if current is None:
-        return ""
+        return ' class="yield-0"'
     y1_max = _to_float(r.get("yield_1y_max"))
     y2_max = _to_float(r.get("yield_2y_max"))
     y1_avg = _to_float(r.get("yield_1y_avg"))
@@ -335,10 +339,12 @@ def generate():
     for r in rows:
         table_lines.append(
             f"<tr{_row_class(r)}>"
-            f"<td>{_cell(r.get('code', ''))}</td>"
+            f"<td><a href=\"https://scouter.monex.co.jp/report/index/{r.get('code', '')}\" target=\"_blank\">{_cell(r.get('code', ''))}</a></td>"
             f"<td>{_cell(r.get('name', ''))}</td>"
             f"<td>{_cell(r.get('sector', ''))}</td>"
             f"<td>{_cell(r.get('price', ''))}</td>"
+            f"<td>{_cell(r.get('per', ''))}</td>"
+            f"<td>{_cell(r.get('pbr', ''))}</td>"
             f"<td>{_cell(r.get('dividend_yield_forecast', ''))}</td>"
             f"<td>{_cell(r.get('yield_1y_min', ''))}</td>"
             f"<td>{_cell(r.get('yield_1y_avg', ''))}</td>"

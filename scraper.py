@@ -69,6 +69,26 @@ JS_GET_CURRENT_YIELD = """() => {
     return null;
 }"""
 
+JS_GET_SUMMARY_VALUES = """() => {
+    // サマリーセクションからPER・PBRを取得
+    const summary = document.querySelector('.summary');
+    if (!summary) return {};
+    const result = {};
+    const ths = summary.querySelectorAll('th');
+    for (const th of ths) {
+        const text = th.textContent;
+        const td = th.nextElementSibling;
+        if (!td) continue;
+        const num = td.querySelector('.num');
+        if (!num) continue;
+        const v = num.textContent.trim();
+        if (!v || v === '--' || v === '－') continue;
+        if (text.includes('PER')) result.per = v;
+        if (text.includes('PBR')) result.pbr = v;
+    }
+    return result;
+}"""
+
 JS_GET_STOCK_PRICE = """() => {
     // div.latest_stock_price から現在値を取得
     const el = document.querySelector('.latest_stock_price');
@@ -99,6 +119,13 @@ async def fetch_dividend_stats(page, code: str) -> dict:
     price = await page.evaluate(JS_GET_STOCK_PRICE)
     if price:
         data["price"] = price
+
+    # PER・PBRを取得
+    summary = await page.evaluate(JS_GET_SUMMARY_VALUES)
+    if summary.get("per"):
+        data["per"] = summary["per"]
+    if summary.get("pbr"):
+        data["pbr"] = summary["pbr"]
 
     # 2年データ（デフォルト表示）を取得
     stats_2y = await page.evaluate(JS_EXTRACT_PLOT_LINES, YIELD_CHART_INDEX)
@@ -143,6 +170,8 @@ async def run():
         "name",
         "sector",
         "price",
+        "per",
+        "pbr",
         "dividend_yield_forecast",
         "yield_1y_max",
         "yield_1y_min",
