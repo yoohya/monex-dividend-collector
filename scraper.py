@@ -70,22 +70,11 @@ JS_GET_CURRENT_YIELD = """() => {
 }"""
 
 JS_GET_STOCK_PRICE = """() => {
-    // サマリーセクションから株価を取得
-    const summary = document.querySelector('.summary');
-    if (!summary) return null;
-    const ths = summary.querySelectorAll('th');
-    for (const th of ths) {
-        if (th.textContent.includes('現在値')) {
-            const td = th.nextElementSibling;
-            if (!td) continue;
-            const num = td.querySelector('.num');
-            if (num) {
-                const text = num.textContent.trim();
-                if (text && text !== '－') return text;
-            }
-        }
-    }
-    return null;
+    // div.latest_stock_price から現在値を取得
+    const el = document.querySelector('.latest_stock_price');
+    if (!el) return null;
+    const m = el.textContent.match(/([\\d,]+\\.?\\d*)\\s*円/);
+    return m ? m[1] : null;
 }"""
 
 
