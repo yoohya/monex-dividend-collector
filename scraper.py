@@ -4,7 +4,7 @@ import asyncio
 import csv
 import json
 import sys
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 from playwright.async_api import async_playwright
@@ -157,8 +157,10 @@ async def run():
     stocks = load_stocks()
     OUTPUT_DIR.mkdir(exist_ok=True)
 
-    today = datetime.now().strftime("%Y-%m-%d")
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    jst = timezone(timedelta(hours=9))
+    now = datetime.now(jst)
+    today = now.strftime("%Y-%m-%d")
+    timestamp = now.strftime("%Y-%m-%d %H:%M:%S")
 
     csv_path = OUTPUT_DIR / "dividend_data.csv"
     file_exists = csv_path.exists()
