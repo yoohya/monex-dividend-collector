@@ -97,6 +97,24 @@ JS_GET_STOCK_PRICE = """() => {
     return m ? m[1] : null;
 }"""
 
+JS_EXTRACT_YIELD_HISTORY = """(chartIndex) => {
+    const containers = document.querySelectorAll('.highcharts-container');
+    if (chartIndex >= containers.length) return null;
+    const parent = containers[chartIndex].parentElement;
+    const chart = jQuery(parent).highcharts();
+    if (!chart || !chart.series || chart.series.length < 2) return null;
+    const data = chart.series[1].data;
+    if (!data || data.length === 0) return null;
+    const last = data[data.length - 1];
+    const prev1 = data.length >= 2 ? data[data.length - 2] : null;
+    const prev5 = data.length >= 6 ? data[data.length - 6] : null;
+    return {
+        current: last ? last.y : null,
+        prev1d: prev1 ? prev1.y : null,
+        prev5d: prev5 ? prev5.y : null
+    };
+}"""
+
 
 def load_stocks() -> list[dict]:
     with open(STOCKS_FILE, encoding="utf-8") as f:
@@ -126,6 +144,17 @@ async def fetch_dividend_stats(page, code: str) -> dict:
         data["per"] = summary["per"]
     if summary.get("pbr"):
         data["pbr"] = summary["pbr"]
+
+    # 利回りの前日比・前週比を取得（2年チャートのseriesデータから）
+    yield_history = await page.evaluate(JS_EXTRACT_YIELD_HISTORY, YIELD_CHART_INDEX)
+    if yield_history:
+        current = yield_history.get("current")
+        prev1d = yield_history.get("prev1d")
+        prev5d = yield_history.get("prev5d")
+        if current is not None and prev1d is not None:
+            data["yield_1d_change"] = round(current - prev1d, 2)
+        if current is not None and prev5d is not None:
+            data["yield_1w_change"] = round(current - prev5d, 2)
 
     # 2年データ（デフォルト表示）を取得
     stats_2y = await page.evaluate(JS_EXTRACT_PLOT_LINES, YIELD_CHART_INDEX)
@@ -175,6 +204,8 @@ async def run():
         "per",
         "pbr",
         "dividend_yield_forecast",
+        "yield_1d_change",
+        "yield_1w_change",
         "yield_1y_max",
         "yield_1y_min",
         "yield_1y_avg",

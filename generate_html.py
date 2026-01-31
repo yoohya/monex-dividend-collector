@@ -17,6 +17,8 @@ FIELDNAMES = [
     "per",
     "pbr",
     "dividend_yield_forecast",
+    "yield_1d_change",
+    "yield_1w_change",
     "yield_1y_max",
     "yield_1y_min",
     "yield_1y_avg",
@@ -170,6 +172,8 @@ HTML_TEMPLATE = """\
   <th>PER</th>
   <th>PBR</th>
   <th>予想利回り(%)</th>
+  <th>前日比</th>
+  <th>前週比</th>
   <th>1Y 最小</th>
   <th>1Y 平均</th>
   <th>1Y 最大</th>
@@ -294,6 +298,20 @@ def _cell(value: str) -> str:
     return value if value else "-"
 
 
+def _change_cell(value: str | None) -> str:
+    if not value:
+        return '<td style="color:#999">-</td>'
+    try:
+        v = float(value)
+    except ValueError:
+        return '<td style="color:#999">-</td>'
+    if v > 0:
+        return f'<td style="color:#2e7d32">+{value}</td>'
+    if v < 0:
+        return f'<td style="color:#c62828">{value}</td>'
+    return f'<td style="color:#999">{value}</td>'
+
+
 def _to_float(value: str | None) -> float | None:
     if not value:
         return None
@@ -354,6 +372,8 @@ def generate():
             f"<td>{_cell(r.get('per', ''))}</td>"
             f"<td>{_cell(r.get('pbr', ''))}</td>"
             f"<td>{_cell(r.get('dividend_yield_forecast', ''))}</td>"
+            f"{_change_cell(r.get('yield_1d_change', ''))}"
+            f"{_change_cell(r.get('yield_1w_change', ''))}"
             f"<td>{_cell(r.get('yield_1y_min', ''))}</td>"
             f"<td>{_cell(r.get('yield_1y_avg', ''))}</td>"
             f"<td>{_cell(r.get('yield_1y_max', ''))}</td>"
