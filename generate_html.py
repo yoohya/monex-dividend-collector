@@ -260,11 +260,19 @@ HTML_TEMPLATE = """\
     if (!table) return;
     var headers = table.querySelectorAll('thead th');
     var container = document.getElementById('col-toggles');
+    var hiddenByDefault = ['PER', 'PBR', '1Y 最小', '2Y 最小'];
     headers.forEach(function(th, colIndex) {{
+      var headerText = th.textContent.trim();
       var label = document.createElement('label');
       var cb = document.createElement('input');
       cb.type = 'checkbox';
-      cb.checked = true;
+      var hidden = hiddenByDefault.indexOf(headerText) !== -1;
+      cb.checked = !hidden;
+      if (hidden) {{
+        table.querySelectorAll('tr').forEach(function(row) {{
+          if (row.cells[colIndex]) row.cells[colIndex].style.display = 'none';
+        }});
+      }}
       cb.addEventListener('change', function() {{
         var display = cb.checked ? '' : 'none';
         table.querySelectorAll('tr').forEach(function(row) {{
@@ -272,7 +280,7 @@ HTML_TEMPLATE = """\
         }});
       }});
       label.appendChild(cb);
-      label.appendChild(document.createTextNode(' ' + th.textContent.trim()));
+      label.appendChild(document.createTextNode(' ' + headerText));
       container.appendChild(label);
     }});
   }})();
